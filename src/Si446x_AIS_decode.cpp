@@ -23,13 +23,14 @@
 #include "Si446x_AIS_decode.h"
 
 static const char config[] = RADIO_CONFIGURATION_DATA_ARRAY;
-const int ClockPin = 2;
-const int IRQPin = 3;
-const int chipSelectPin = 4;
-const int CLSpin = 5;
-const int SDNPin = 8;
-const int DATA_PIN = 6;
-const int DEBUG_PIN = 7;
+const int ClockPin = 33;         // Radio GPIO2, ESP32 D33
+const int IRQPin = 32;           // Radio IRQ,   ESP32 D32
+const int chipSelectPin = 5;     // Radio NSEL,  ESP32 D5
+const int CLSpin = 27;           // Radio GPIO1, ESP32 D27
+const int SDNPin = 26;           // Radio SDN,   ESP32 D26
+const int DATA_PIN = 25;         // Radio GPIO3, ESP32 D25
+const int DEBUG_PIN = 2;        // Debug LED (ESP32 internal led)
+
 // paramters for package detection
 #define DEBUG
 #define PH_PREAMBLE_LENGTH 8                    // minimum number of alternating bits we need for a valid preamble
