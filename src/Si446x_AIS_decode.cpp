@@ -16,8 +16,12 @@
  * miso on radio to pin d12
  * clock on radio to pin d13
  */
+
+#include <Arduino.h>
 #include <SPI.h> 
-#include "radio_config.h"
+#include "../lib/radio_config.h"
+#include "Si446x_AIS_decode.h"
+
 static const char config[] = RADIO_CONFIGURATION_DATA_ARRAY;
 const int ClockPin =2;  
 const int IRQPin =3;
@@ -71,7 +75,7 @@ enum PH_SYNC_STATE {
 unsigned char results[9];
 unsigned char interrupt[9];
 volatile boolean interuptwaiting;
-unsigned char sync;
+//unsigned char sync;
 unsigned int bitstream;
 volatile unsigned char  ph_state = PH_STATE_OFF;
 volatile unsigned char ph_last_error = PH_ERROR_NONE;
