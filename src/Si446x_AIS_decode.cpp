@@ -25,11 +25,12 @@
 static const char config[] = RADIO_CONFIGURATION_DATA_ARRAY;
 const int ClockPin = 33;         // Radio GPIO2, ESP32 D33
 const int IRQPin = 32;           // Radio IRQ,   ESP32 D32
-const int chipSelectPin = 5;     // Radio NSEL,  ESP32 D5
+const int chipSelectPin = 5;     // Radio NSEL,  ESP32 D5          SPI CS
 const int CLSpin = 27;           // Radio GPIO1, ESP32 D27
 const int SDNPin = 26;           // Radio SDN,   ESP32 D26
 const int DATA_PIN = 25;         // Radio GPIO3, ESP32 D25
-const int DEBUG_PIN = 2;        // Debug LED (ESP32 internal led)
+const int DEBUG_PIN_LED = 2;        // Debug LED (ESP32 internal led)
+const int DEBUG_PIN_LOGANAL = 13; // Debug PIN for logic analysator
 
 // paramters for package detection
 #define DEBUG
@@ -97,6 +98,25 @@ unsigned int fifo_bytes_out;           // counter for bytes read from current pa
 volatile unsigned char fifo_packet_in; // table index of incoming packet
 unsigned char fifo_packet_out;         // table index of outgoing packet
 unsigned int chan_timer;
+
+void debugSignal(byte times, int duration) {
+#ifdef DEBUG
+  for (byte n=0; n<times; n++) {
+    digitalWrite(DEBUG_PIN_LOGANAL, HIGH);
+    digitalWrite(DEBUG_PIN_LED, HIGH);
+    delay(duration);
+    digitalWrite(DEBUG_PIN_LOGANAL, LOW);
+    digitalWrite(DEBUG_PIN_LED, LOW);
+    delay(duration);
+  }
+#endif
+}
+
+void debugToggle() {
+#ifdef DEBUG
+  digitalWrite(DEBUG_PIN_LOGANAL, !digitalRead(DEBUG_PIN_LOGANAL));
+#endif
+}
 
 void timer()
 {
@@ -201,7 +221,7 @@ void fifo_commit_packet(void)
 
 void si4464clock()
 {
-  digitalWrite(DEBUG_PIN, LOW);
+  debugToggle();
   static uint16_t rx_bitstream;    // shift register with incoming data
   static uint16_t rx_bit_count;    // bit counter for various purposes
   static uint16_t rx_crc;          // word for AIS payload CRC calculation
@@ -350,7 +370,7 @@ void si4464clock()
 
       // STATE: RECEIVE PACKET
     case PH_STATE_RECEIVE_PACKET: // state: receiving packet data
-      digitalWrite(DEBUG_PIN, HIGH);
+      digitalWrite(DEBUG_PIN_LED, HIGH);
       rx_bit = rx_bitstream & 0x80; // extract data bit for processing
 
       if (rx_one_count == 5)
@@ -395,7 +415,7 @@ void si4464clock()
         else
         {
           fifo_commit_packet(); // else commit packet in FIFO
-          // digitalWrite(DEBUG_PIN, HIGH);
+          // digitalWrite(DEBUG_PIN_LED, HIGH);
         }
         ph_state = PH_STATE_RESET; // reset state machine
         break;
@@ -635,17 +655,23 @@ void nmea_process_packet(void)
 void setup()
 {
   // put your setup code here, to run once:
+
+  // Show boot signal for logic analysator
+  pinMode(DEBUG_PIN_LED, OUTPUT);
+  pinMode(DEBUG_PIN_LOGANAL, OUTPUT);
+  debugSignal(2, 30);
+
   SPI.begin();
   Serial.begin(9600);
+  //SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
   pinMode(ClockPin, INPUT);
   pinMode(IRQPin, INPUT);
   pinMode(chipSelectPin, OUTPUT);
-  pinMode(DEBUG_PIN, OUTPUT);
   pinMode(CLSpin, INPUT);
   pinMode(SDNPin, OUTPUT);
   pinMode(DATA_PIN, INPUT);
   digitalWrite(SDNPin, HIGH);
-  digitalWrite(DEBUG_PIN, HIGH);
+  digitalWrite(DEBUG_PIN_LED, HIGH);
   pinMode(chipSelectPin, OUTPUT);
 #ifdef DEBUG
   Serial.println("Setup Start");
@@ -663,6 +689,8 @@ void setup()
 #endif
   Si4464_write((const byte[]){0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 8);
   chan_timer = 0;
+
+  debugSignal(4, 30);
 }
 
 void fifo_remove_packet(void)
