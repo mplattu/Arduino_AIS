@@ -680,9 +680,6 @@ void setup()
   Si4464_write((const byte[]){0x23, 0x00}, 2);
   Si4464_write((const byte[]){0x44, 0x00, 0x00, 0x00, 0x00}, 5);
 
-  attachInterrupt(digitalPinToInterrupt(ClockPin), si4464clock, RISING);
-
-  // attachInterrupt(digitalPinToInterrupt(IRQPin),si4464IRQ, RISING );
   ph_state = PH_STATE_RESET;
 #ifdef DEBUG
   Serial.println("end");
@@ -691,6 +688,12 @@ void setup()
   chan_timer = 0;
 
   debugSignal(4, 30);
+
+  // The interrupt is attached after setup is completely finished
+  // to make sure that all setup code is sent to the radio
+  attachInterrupt(digitalPinToInterrupt(ClockPin), si4464clock, RISING);
+
+  // attachInterrupt(digitalPinToInterrupt(IRQPin),si4464IRQ, RISING );
 }
 
 void fifo_remove_packet(void)
